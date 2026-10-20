@@ -1,0 +1,32 @@
+{
+  "name": "integration-ggcalendar",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "tsx --disable-warning=ExperimentalWarning --test src/modules/lms/lms.sync.test.ts src/modules/notify/notify.test.ts",
+    "start": "tsx --disable-warning=ExperimentalWarning src/cli.ts",
+    "build": "tsc",
+    "dev": "tsx watch --disable-warning=ExperimentalWarning src/server.ts",
+    "serve": "node dist/server.js",
+    "server": "tsx --disable-warning=ExperimentalWarning src/server.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "googleapis": "^189.0.0",
+    "nodemailer": "^10.3.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "@types/nodemailer": "^8.0.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
