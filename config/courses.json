@@ -1,0 +1,8 @@
+{
+  "courses": ["MAD101", "PRO192", "OSG202"],
+  "calendar": "Nhắc nhở",
+  "eventDurationMinutes": 30,
+  "timeZone": "Asia/Ho_Chi_Minh",
+  "eventColor": "",
+  "reminderMinutes": [10080, 4320, 1440, 300]
+}
