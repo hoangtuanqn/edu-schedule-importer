@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { calendar_v3 } from "googleapis";
 import type { Db } from "../../db/database.js";
+import type { CalendarGateway } from "../events/calendar.gateway.js";
 import { EVENT_COLORS, type LmsConfig } from "./lms.config.js";
 import type { LmsEvent } from "./lms.ical.js";
 import { LmsRepository, type FieldChange, type StoredEvent } from "./lms.repository.js";
@@ -11,17 +12,7 @@ export const LMS_LOOKBACK_DAYS = 5;
 /** Chỉ khôi phục sự kiện bị xóa trên Google nếu hạn của nó trong vòng 10 ngày trở lại (hoặc ở tương lai) */
 export const RESTORE_WINDOW_DAYS = 10;
 
-/** Cầu nối tới Google Calendar, tách riêng để dễ kiểm thử */
-export interface CalendarGateway {
-  /** Id lịch Google đích (mọi sự kiện LMS nằm ở đây) */
-  readonly calendarId: string;
-  /** Trạng thái sự kiện trong lịch đích, hoặc trong lịch `inCalendarId` nếu truyền vào */
-  status(eventId: string, inCalendarId?: string): Promise<"exists" | "deleted" | "missing">;
-  /** Trả về id sự kiện thực sự được dùng (có thể khác `eventId` nếu id cũ là bản đã xóa) */
-  upsert(eventId: string, body: calendar_v3.Schema$Event): Promise<string>;
-  /** Chuyển sự kiện từ lịch khác về lịch đích (giữ nguyên id) */
-  move(eventId: string, fromCalendarId: string): Promise<void>;
-}
+export type { CalendarGateway } from "../events/calendar.gateway.js";
 
 export interface ReportItem {
   uid: string;

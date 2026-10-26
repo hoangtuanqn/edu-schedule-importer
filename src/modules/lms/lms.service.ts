@@ -1,12 +1,13 @@
 import { env } from "../../config/env.js";
 import type { OAuth2Client } from "../../config/google.js";
-import { openDb, type Db } from "../../db/database.js";
+import { getDb } from "../../db/connection.js";
+import { googleGateway } from "../events/calendar.gateway.js";
 import * as events from "../events/events.service.js";
 import { loadConfig, type LmsConfig } from "./lms.config.js";
 import { fetchIcal, type LmsEvent } from "./lms.ical.js";
 import { notify } from "../notify/notify.service.js";
 import { buildLmsNotification, hasChanges } from "./lms.notification.js";
-import { runSync,type CalendarGateway, type SyncReport } from "./lms.sync.js";
+import { runSync, type SyncReport } from "./lms.sync.js";
 
 export interface LmsPreview {
   feedTotal: number;
@@ -29,19 +30,6 @@ export async function getFilteredEvents(config?: LmsConfig): Promise<LmsPreview>
   return { feedTotal: all.length, events: kept, ignoredCourses: [...ignored].sort() };
 }
 
-let db: Db | undefined;
-const getDb = () => (db ??= openDb(env.dbPath));
-export function closeDb() {
-  db?.close();
-  db = undefined;
-}
-
-const googleGateway = (auth: OAuth2Client, calendarId: string): CalendarGateway => ({
-  calendarId,
-  status: (id, inCalendarId = calendarId) => events.getStatus(auth, id, inCalendarId),
-  upsert: async (id, body) => (await events.upsert(auth, id, body, calendarId)).eventId,
-  move: (id, from) => events.move(auth, id, from, calendarId),
-});
 
 /** Lấy LMS, lưu vào SQLite, đối chiếu và đồng bộ với Google Calendar */
 export async function syncNow(auth: OAuth2Client, dryRun = false): Promise<SyncReport> {
