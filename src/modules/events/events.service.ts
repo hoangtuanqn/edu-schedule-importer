@@ -79,14 +79,14 @@ export async function upsertVia(
   body: calendar_v3.Schema$Event,
   calendarId = CALENDAR_ID,
 ) {
-  // colorId = null chỉ có nghĩa khi patch (xóa màu); khi tạo mới thì bỏ đi
-  const { colorId, ...rest } = body;
+  // null chỉ có nghĩa khi patch (xóa giá trị, ví dụ bỏ màu / bỏ địa điểm); khi tạo mới thì bỏ các trường null
+  const fresh = Object.fromEntries(Object.entries(body).filter(([, v]) => v !== null)) as calendar_v3.Schema$Event;
   for (let step = 0; step < MAX_ID_ATTEMPTS; step++) {
     const id = step === 0 ? eventId : nextEventId(eventId, step);
     try {
       const res = await api.insert({
         calendarId,
-        requestBody: { ...rest, ...(colorId ? { colorId } : {}), id },
+        requestBody: { ...fresh, id },
       });
       return { action: "created" as const, event: res.data, eventId: id };
     } catch (e) {
