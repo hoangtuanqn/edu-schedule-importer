@@ -16,6 +16,8 @@ export interface NotificationSection {
   heading: string;
   tone?: Tone;
   items: NotificationItem[];
+  /** Tổng số mục thật nếu `items` đã bị rút gọn; tiêu đề hiện số này thay cho items.length */
+  total?: number;
 }
 
 /**

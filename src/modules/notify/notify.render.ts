@@ -20,7 +20,7 @@ export function renderText(m: NotificationMessage): string {
   if (m.highlights?.length) out.push(m.highlights.join(" · "));
   if (m.intro) out.push("", m.intro);
   for (const s of m.sections) {
-    out.push("", `${s.heading.toUpperCase()} (${s.items.length})`);
+    out.push("", `${s.heading.toUpperCase()} (${s.total ?? s.items.length})`);
     for (const raw of s.items) {
       const i = norm(raw);
       out.push(`• ${i.text}`);
@@ -61,7 +61,7 @@ export function renderHtml(m: NotificationMessage): string {
           return `<div style="padding:10px 12px;margin:6px 0;background:${t.bg};border-left:4px solid ${t.color};border-radius:4px"><div style="font-weight:600;color:#111827">${esc(i.text)}</div>${meta}${details}</div>`;
         })
         .join("");
-      return `<h3 style="margin:22px 0 4px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:${t.color}">${esc(s.heading)} (${s.items.length})</h3>${items}`;
+      return `<h3 style="margin:22px 0 4px;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:${t.color}">${esc(s.heading)} (${s.total ?? s.items.length})</h3>${items}`;
     })
     .join("");
 
