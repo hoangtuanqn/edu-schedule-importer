@@ -24,6 +24,31 @@ CREATE TABLE IF NOT EXISTS lms_events (
 );
 CREATE INDEX IF NOT EXISTS idx_lms_events_due ON lms_events(due_at);
 
+-- Buổi học / buổi thi lấy từ FAP
+CREATE TABLE IF NOT EXISTS fap_sessions (
+  id                 TEXT PRIMARY KEY,           -- hash của loại + môn + lớp + ngày + slot
+  kind               TEXT NOT NULL,              -- 'class' | 'exam'
+  course_code        TEXT NOT NULL,
+  class_name         TEXT NOT NULL,
+  date               TEXT NOT NULL,              -- YYYY-MM-DD (giờ địa phương, không có múi giờ)
+  slot               INTEGER NOT NULL,
+  start_time         TEXT NOT NULL,              -- HH:mm
+  end_time           TEXT NOT NULL,
+  room               TEXT,
+  lecturer           TEXT,
+  online             INTEGER NOT NULL DEFAULT 0,
+  meet_url           TEXT,                       -- link Meet của lớp online
+  google_event_id    TEXT NOT NULL,
+  google_calendar_id TEXT,
+  synced_hash        TEXT,
+  synced_at          TEXT,                       -- NULL = chưa từng đẩy lên Google
+  restored_count     INTEGER NOT NULL DEFAULT 0,
+  missing            INTEGER NOT NULL DEFAULT 0, -- 1 = lần nhập gần nhất của tuần đó không còn buổi này
+  first_seen_at      TEXT NOT NULL,
+  last_seen_at       TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_fap_sessions_date ON fap_sessions(date);
+
 CREATE TABLE IF NOT EXISTS sync_runs (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   started_at  TEXT NOT NULL,
@@ -50,4 +75,7 @@ export function openDb(file: string): Db {
 function migrate(db: Db) {
   const cols = (db.prepare("PRAGMA table_info(lms_events)").all() as { name: string }[]).map((c) => c.name);
   if (!cols.includes("google_calendar_id")) db.exec("ALTER TABLE lms_events ADD COLUMN google_calendar_id TEXT");
+
+  const fapCols = (db.prepare("PRAGMA table_info(fap_sessions)").all() as { name: string }[]).map((c) => c.name);
+  if (!fapCols.includes("meet_url")) db.exec("ALTER TABLE fap_sessions ADD COLUMN meet_url TEXT");
 }
