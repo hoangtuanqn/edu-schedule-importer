@@ -16,7 +16,7 @@ const EVENT_COLOR_NAMES = Object.keys(EVENT_COLORS) as [keyof typeof EVENT_COLOR
 const MAX_REMINDER_MINUTES = 40320;
 
 const configSchema = z.object({
-  /** Mã môn cần lấy, ví dụ ["MAD101", "PRO192"] (không phân biệt hoa thường) */
+  /** Mã môn cần lấy từ LMS (hạn nộp bài), ví dụ ["MAD101", "PRO192"] (không phân biệt hoa thường). Không áp dụng cho FAP. */
   courses: z.array(z.string().trim().min(1)).transform((a) => a.map((c) => c.toUpperCase())),
   /** Thời lượng sự kiện trên Google Calendar; sự kiện kết thúc đúng giờ hạn của LMS */
   eventDurationMinutes: z.number().int().min(0).max(1440).default(30),
@@ -36,6 +36,28 @@ const configSchema = z.object({
     .array(z.number().int().min(0).max(MAX_REMINDER_MINUTES))
     .max(5, "Google Calendar chỉ cho tối đa 5 lời nhắc")
     .default([7 * 1440, 3 * 1440, 1440, 5 * 60]),
+  /**
+   * Lịch học và lịch thi lấy từ FAP. KHÔNG dùng danh sách `courses` ở trên (danh sách đó chỉ để lọc LMS):
+   * lịch FAP là lịch riêng của bạn nên lấy tất cả các môn.
+   */
+  fap: z
+    .object({
+      /** Môn muốn BỎ QUA khi lấy từ FAP (mặc định rỗng = lấy hết). Ví dụ ["CSI106"] */
+      ignoreCourses: z
+        .array(z.string().trim().min(1))
+        .default([])
+        .transform((a) => a.map((c) => c.toUpperCase())),
+      /** Lịch Google chứa lịch học/lịch thi (cách ghi giống `calendar`) */
+      calendar: z.string().trim().min(1).default("Học tập ở ngoài"),
+      /** Màu riêng; lịch thi mặc định màu đỏ để nổi bật */
+      classColor: z.enum([...EVENT_COLOR_NAMES, ""]).default(""),
+      examColor: z.enum([...EVENT_COLOR_NAMES, ""]).default("tomato"),
+      /** Nhắc trước giờ BẮT ĐẦU bao nhiêu phút (popup). Tối đa 5 mốc */
+      classReminderMinutes: z.array(z.number().int().min(0).max(MAX_REMINDER_MINUTES)).max(5).default([60]),
+      examReminderMinutes: z.array(z.number().int().min(0).max(MAX_REMINDER_MINUTES)).max(5).default([4320, 1440, 180]),
+    })
+    // zod 4: .default() không áp dụng giá trị mặc định lồng bên trong, .prefault() thì có
+    .prefault({}),
 });
 
 export type LmsConfig = z.infer<typeof configSchema>;

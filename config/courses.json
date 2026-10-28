@@ -4,5 +4,8 @@
   "eventDurationMinutes": 30,
   "timeZone": "Asia/Ho_Chi_Minh",
   "eventColor": "",
-  "reminderMinutes": [10080, 4320, 1440, 300]
+  "reminderMinutes": [10080, 4320, 1440, 300],
+  "fap": {
+    "ignoreCourses": []
+  }
 }
