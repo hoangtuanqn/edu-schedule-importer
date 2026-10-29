@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tsx --disable-warning=ExperimentalWarning --test src/modules/lms/lms.sync.test.ts src/modules/notify/notify.test.ts",
+    "test": "tsx --disable-warning=ExperimentalWarning --test src/modules/lms/lms.sync.test.ts src/modules/notify/notify.test.ts src/modules/fap/fap.test.ts",
     "start": "tsx --disable-warning=ExperimentalWarning src/cli.ts",
     "build": "tsc",
     "dev": "tsx watch --disable-warning=ExperimentalWarning src/server.ts",
@@ -19,6 +19,7 @@
     "dotenv": "^18.0.9",
     "express": "^5.3.0",
     "googleapis": "^189.0.0",
+    "node-html-parser": "^9.0.6",
     "nodemailer": "^10.3.1",
     "zod": "^4.6.7"
   },
