@@ -14,7 +14,7 @@ function openBrowser(url: string) {
 
 /** Mở trình duyệt để đăng nhập Google, chờ đến khi có token rồi trả về client. Dùng khi chạy CLI. */
 export async function loginInteractive(): Promise<OAuth2Client> {
-  const server = createApp().listen(env.port);
+  const server = createApp().listen(env.port, "127.0.0.1");
   await new Promise<void>((resolve, reject) => {
     server.once("listening", resolve);
     server.once("error", reject);
