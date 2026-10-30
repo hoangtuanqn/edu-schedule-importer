@@ -20,6 +20,7 @@ export const env = {
     pass: process.env.SMTP_PASS || undefined,
     to: process.env.NOTIFY_TO || process.env.SMTP_USER || undefined,
   },
+  importToken: process.env.IMPORT_TOKEN || undefined,
   dbPath: process.env.DB_PATH ?? "data/app.db",
   lmsIcalUrl: process.env.LMS_ICAL_URL,
   tokenPath: process.env.TOKEN_PATH ?? "token.json",
