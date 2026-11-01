@@ -1,71 +1,24 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "node:test";
-import type { calendar_v3 } from "googleapis";
 import { openDb, type Db } from "../../db/database.js";
 import type { LmsConfig } from "./lms.config.js";
 import type { LmsEvent } from "./lms.ical.js";
-import { nextEventId, upsertVia, type EventsApi } from "../events/events.service.js";
-import { runSync, type CalendarGateway } from "./lms.sync.js";
+import { nextEventId, upsertVia } from "../events/events.service.js";
+import { fakeEventsApi, fakeGoogle, type Store } from "../../test-utils/fakeGoogle.js";
+import { runSync } from "./lms.sync.js";
 
 const DAY = 24 * 3600 * 1000;
 const T0 = new Date("2026-11-01T03:00:00Z");
 const cfg: LmsConfig = {
   courses: ["PRO192"], eventDurationMinutes: 30, timeZone: "Asia/Ho_Chi_Minh",
   calendar: "Nhắc nhở", eventColor: "tomato", reminderMinutes: [10080, 4320, 1440, 300],
+  fap: { ignoreCourses: [], calendar: "Học tập ở ngoài", classColor: "", examColor: "tomato", classReminderMinutes: [60], examReminderMinutes: [4320, 1440, 180] },
 };
 
 const ev = (uid: string, due: Date, over: Partial<LmsEvent> = {}): LmsEvent => ({
   uid, summary: `Bài ${uid}`, description: "", courseCode: "PRO192", courseLabel: "PRO192-X",
   start: due, end: due, allDay: false, ...over,
 });
-
-/**
- * Google giả, mô phỏng đúng hành vi thật: xóa sự kiện chỉ để lại bản "cancelled" mang cùng id,
- * và bản đó KHÔNG khôi phục được (insert -> 409, patch -> 403).
- */
-type Store = Map<string, calendar_v3.Schema$Event>;
-const err = (code: number) => Object.assign(new Error(`HTTP ${code}`), { code });
-
-function fakeEventsApi(store: Store, dead: Set<string>, cal: string): EventsApi {
-  const key = (id: string) => `${cal}|${id}`;
-  return {
-    insert: async ({ requestBody }: any) => {
-      const id = requestBody.id as string;
-      if (store.has(id) || dead.has(key(id))) throw err(409);
-      store.set(id, requestBody);
-      return { data: requestBody };
-    },
-    get: async ({ eventId }: any) => {
-      if (dead.has(key(eventId))) return { data: { status: "cancelled" } };
-      if (store.has(eventId)) return { data: { ...store.get(eventId), status: "confirmed" } };
-      throw err(404);
-    },
-    patch: async ({ eventId, requestBody }: any) => {
-      if (dead.has(key(eventId))) throw err(403);
-      store.set(eventId, { ...store.get(eventId), ...requestBody });
-      return { data: store.get(eventId) };
-    },
-  } as unknown as EventsApi;
-}
-
-function fakeGoogle(
-  calendars: Record<string, Store> = { primary: new Map(), reminders: new Map() },
-  target = "reminders",
-  dead = new Set<string>(),
-) {
-  const store = calendars[target]; // lịch đích
-  const calls = { upsert: 0, status: 0, move: 0 };
-  const api = fakeEventsApi(store, dead, target);
-  const gateway: CalendarGateway = {
-    calendarId: target,
-    async status(id, inCal = target) { calls.status++; return calendars[inCal].has(id) ? "exists" : "deleted"; },
-    async upsert(id, body) { calls.upsert++; return (await upsertVia(api, id, body, target)).eventId; },
-    async move(id, from) { calls.move++; store.set(id, calendars[from].get(id)!); calendars[from].delete(id); },
-  };
-  /** Người dùng xóa mọi sự kiện trong lịch đích trên Google (để lại bản cancelled) */
-  const wipe = () => { for (const id of store.keys()) dead.add(`${target}|${id}`); store.clear(); };
-  return { store, calendars, calls, gateway, wipe, dead };
-}
 
 describe("runSync", () => {
   let db: Db;
