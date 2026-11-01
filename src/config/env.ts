@@ -8,6 +8,14 @@ function required(name: string): string {
 
 const port = Number(process.env.PORT ?? 3000);
 
+/** Số ngày nguyên >= 0 từ biến môi trường; sai hoặc để trống thì dùng giá trị mặc định. 0 = tắt */
+function days(name: string, fallback: number): number {
+  const raw = process.env[name]?.trim();
+  if (!raw) return fallback;
+  const n = Number(raw);
+  return Number.isInteger(n) && n >= 0 ? n : fallback;
+}
+
 export const env = {
   port,
   googleClientId: required("GOOGLE_CLIENT_ID"),
@@ -21,6 +29,10 @@ export const env = {
     to: process.env.NOTIFY_TO || process.env.SMTP_USER || undefined,
   },
   importToken: process.env.IMPORT_TOKEN || undefined,
+  /** Xóa file log không được ghi trong ngần này ngày (0 = không xóa) */
+  logRetentionDays: days("LOG_RETENTION_DAYS", 7),
+  /** Xóa lịch sử các lần chạy trong DB cũ hơn ngần này ngày (0 = không xóa) */
+  historyRetentionDays: days("HISTORY_RETENTION_DAYS", 90),
   dbPath: process.env.DB_PATH ?? "data/app.db",
   lmsIcalUrl: process.env.LMS_ICAL_URL,
   tokenPath: process.env.TOKEN_PATH ?? "token.json",
