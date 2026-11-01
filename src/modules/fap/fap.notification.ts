@@ -103,9 +103,9 @@ export function buildFapNotification(r: FapReport): NotificationMessage {
       : changed.length ? (s.kind === "exam" ? "Đổi lịch thi" : "Đổi lịch học")
       : "Đã khôi phục";
     const delta = changed.length ? ` (${changed[0].changes.map((c) => `${FIELD_LABEL[c.field].toLowerCase()}: ${c.from} → ${c.to}`).join("; ")})` : "";
-    subject = `${lead}: ${name(s)} — ${whenLabel(s.date, s.startTime)} · ${where(s)}${delta}`;
+    subject = `${lead}: ${name(s)} - ${whenLabel(s.date, s.startTime)} · ${where(s)}${delta}`;
   } else {
-    subject = `${parts.join(" · ")} — ${courses.join(", ")}`;
+    subject = `${parts.join(" · ")} - ${courses.join(", ")}`;
   }
 
   const top = sections[0]?.items[0];

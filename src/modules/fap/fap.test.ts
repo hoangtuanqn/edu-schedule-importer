@@ -380,13 +380,13 @@ describe("buildFapNotification", () => {
   it("một lịch thi mới: subject nêu đủ môn, giờ, phòng", async () => {
     const r = await run(fakeGoogle(), EXAM_HTML, ["MAD101"]);
     assert.ok(hasFapChanges(r));
-    assert.equal(buildFapNotification(r).subject, "[FAP] Lịch thi mới: [Thi] MAD101 - AI2101 — 14:30 Th 6, 20/11 · Phòng 111");
+    assert.equal(buildFapNotification(r).subject, "[FAP] Lịch thi mới: [Thi] MAD101 - AI2101 - 14:30 Th 6, 20/11 · Phòng 111");
   });
 
   it("nhiều lịch thi mới được nói rõ là lịch thi và xếp lên đầu", async () => {
     const r = await run(fakeGoogle(), EXAM_HTML, ["MAD101", "OSG202"]);
     const m = buildFapNotification(r);
-    assert.equal(m.subject, "[FAP] 2 lịch thi mới — MAD101, OSG202");
+    assert.equal(m.subject, "[FAP] 2 lịch thi mới - MAD101, OSG202");
     assert.equal(m.sections[0].heading, "Lịch thi mới");
   });
 
@@ -395,7 +395,7 @@ describe("buildFapNotification", () => {
     await run(g, CLASS_HTML, ["MAD101"]);
     const r = await run(g, CLASS_HTML.replaceAll("P.124", "P.201"), ["MAD101"]);
     const m = buildFapNotification(r);
-    assert.equal(m.subject, "[FAP] 2 thay đổi — MAD101");
+    assert.equal(m.subject, "[FAP] 2 thay đổi - MAD101");
     assert.deepEqual(m.sections.map((s) => s.heading), ["Thay đổi"]);
     const first = m.sections[0].items[0];
     assert.ok(typeof first !== "string" && JSON.stringify(first.details).includes("P.201"));
@@ -418,7 +418,7 @@ describe("buildFapNotification", () => {
     assert.equal(sec.total, 140);
     assert.equal(sec.items.length, MAX_ITEMS + 1);
     assert.match(String(sec.items.at(-1)), /và 115 mục khác/);
-    assert.equal(m.subject, "[FAP] 140 lịch học mới — MAD101");
+    assert.equal(m.subject, "[FAP] 140 lịch học mới - MAD101");
   });
 
   it("không đổi gì, hoặc chỉ đổi cấu hình, thì không gửi mail", async () => {
