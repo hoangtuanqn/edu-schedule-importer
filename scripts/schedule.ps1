@@ -21,16 +21,19 @@ $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
 $runner = Join-Path $PSScriptRoot "run-sync.cmd"
-$log = Join-Path $root "logs\sync.log"
+$logDir = Join-Path $root "logs"
 
 function Get-Job { Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue }
 
 function Show-Log([int]$Lines = 15) {
-  if (Test-Path $log) {
-    Write-Host "`n--- $Lines dòng cuối của logs\sync.log ---"
-    Get-Content $log -Tail $Lines -Encoding UTF8
+  # log theo ngày (sync-YYYY-MM-DD.log): lấy file được ghi gần nhất
+  $latest = Get-ChildItem -Path $logDir -Filter "sync*.log" -File -ErrorAction SilentlyContinue |
+    Sort-Object LastWriteTime -Descending | Select-Object -First 1
+  if ($latest) {
+    Write-Host "`n--- $Lines dòng cuối của logs\$($latest.Name) ---"
+    Get-Content $latest.FullName -Tail $Lines -Encoding UTF8
   } else {
-    Write-Host "`n(chưa có logs\sync.log vì job chưa chạy lần nào)"
+    Write-Host "`n(chưa có file log trong logs\ vì job chưa chạy lần nào)"
   }
 }
 
@@ -65,7 +68,7 @@ switch ($Action) {
 
     Write-Host "Job '$TaskName': chạy mỗi $EveryHours giờ khi bạn đã đăng nhập Windows."
     Write-Host "  Lệnh : powershell.exe $arg"
-    Write-Host "  Log  : $log"
+    Write-Host "  Log  : $logDir\sync-YYYY-MM-DD.log (mỗi ngày một file, tự xóa sau LOG_RETENTION_DAYS ngày)"
     if ($DryRun) { Write-Host "(-DryRun: chưa cài gì)"; return }
 
     Register-ScheduledTask -TaskName $TaskName -Action $act -Trigger $trg -Settings $set -Principal $pri `
@@ -76,7 +79,7 @@ switch ($Action) {
   "remove" {
     if (-not (Get-Job)) { Write-Host "Job '$TaskName' chưa được cài."; return }
     Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
-    Write-Host "Đã gỡ job '$TaskName'. (logs\sync.log được giữ lại)"
+    Write-Host "Đã gỡ job '$TaskName'. (thư mục logs\ được giữ lại)"
   }
   "status" {
     if (-not (Get-Job)) { Write-Host "Chưa cài job '$TaskName'. Cài bằng: npm run schedule:install"; return }
