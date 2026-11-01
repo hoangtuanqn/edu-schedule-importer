@@ -49,6 +49,13 @@ CREATE TABLE IF NOT EXISTS fap_sessions (
 );
 CREATE INDEX IF NOT EXISTS idx_fap_sessions_date ON fap_sessions(date);
 
+-- Trạng thái lặt vặt của ứng dụng (ví dụ lần cảnh báo gần nhất để không gửi mail lặp lại)
+CREATE TABLE IF NOT EXISTS app_state (
+  key        TEXT PRIMARY KEY,
+  value      TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS sync_runs (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   started_at  TEXT NOT NULL,
