@@ -3,7 +3,7 @@
 Tự động đưa **hạn nộp bài (LMS)** và **lịch học, lịch thi (FAP)** lên **Google Calendar**, kèm lời nhắc, và gửi **email** mỗi khi có thay đổi.
 
 - Chạy hoàn toàn trên máy của bạn. Không có máy chủ nào khác, dữ liệu nằm trong một file SQLite.
-- Viết bằng TypeScript + Express. Đã có 70 test.
+- Viết bằng TypeScript + Express. Đã có 81 test.
 
 > Dự án làm cho hệ thống của FPT (LMS Moodle và FAP). Với trường khác thì phần LMS (đọc iCal của Moodle) dùng lại được, phần FAP cần sửa bộ đọc trang.
 
@@ -91,6 +91,8 @@ Mở `.env` và điền dần theo các bước dưới. Bảng đầy đủ cá
 | `SMTP_HOST`, `SMTP_PORT` | Không | Mặc định `smtp.gmail.com` và `465` |
 | `DB_PATH` | Không | Mặc định `data/app.db` |
 | `TOKEN_PATH` | Không | Nơi lưu đăng nhập Google, mặc định `token.json` |
+| `LOG_RETENTION_DAYS` | Không | Xóa file log không được ghi trong ngần này ngày. Mặc định `7`, `0` là không xóa (mục 6.4) |
+| `HISTORY_RETENTION_DAYS` | Không | Xóa lịch sử các lần chạy trong DB cũ hơn ngần này ngày. Mặc định `90`, `0` là không xóa |
 
 ### 2.4. Lấy thông tin đăng nhập Google (làm một lần)
 
@@ -270,7 +272,7 @@ Job chạy `npm start -- --non-interactive`, tức là đồng bộ LMS và đ�
 - Job chỉ chạy khi bạn đã đăng nhập Windows (không lưu mật khẩu). Máy ngủ không tự thức dậy để chạy.
 - Không chạy chồng nhau; quá 30 phút thì tự dừng.
 
-Log nằm ở `logs/sync.log` (tự quay vòng khi quá 1 MB).
+Log mỗi ngày một file: `logs/sync-YYYY-MM-DD.log`. Log cũ tự bị xóa, xem mục 6.4.
 
 ### 6.2. Chế độ chạy ngầm `--non-interactive`
 
@@ -287,8 +289,33 @@ Dành cho việc tự chạy: **không bao giờ mở trình duyệt**. Khi gặ
 Dùng cron, ví dụ chạy mỗi 2 giờ (`crontab -e`):
 
 ```
-0 */2 * * * cd /đường/dẫn/dự/án && npm start -- --non-interactive >> logs/sync.log 2>&1
+0 */2 * * * cd /đường/dẫn/dự/án && mkdir -p logs && npm start -- --non-interactive >> logs/sync-$(date +\%F).log 2>&1
 ```
+
+(Trong crontab dấu `%` phải viết là `\%`. Việc dọn log cũ vẫn tự chạy sau mỗi lần `npm start`.)
+
+### 6.4. Tự dọn log cho nhẹ máy
+
+Sau **mỗi lần** `npm start`, chương trình tự dọn:
+
+| Dọn gì | Khi nào xóa | Chỉnh trong `.env` |
+|---|---|---|
+| File log `logs/sync*.log` | Không được ghi trong **7 ngày** | `LOG_RETENTION_DAYS` |
+| Lịch sử các lần chạy trong DB (bảng `sync_runs`) | Cũ hơn **90 ngày** | `HISTORY_RETENTION_DAYS` |
+| Trạng thái chống lặp cảnh báo đã hết hạn | Cũ hơn 30 ngày | (cố định) |
+
+Đặt giá trị `0` là **không xóa**. Giá trị không hợp lệ (chữ, số âm) thì dùng mặc định.
+
+Cách tính: dựa vào lần ghi cuối của file, nên file của ngày hôm nay (đang được ghi) không bao giờ bị xóa. Chỉ file tên dạng `sync*.log` trong thư mục `logs/` mới bị đụng tới; file khác bạn tự để vào đó thì giữ nguyên. Lần chạy nào có dọn thì dòng cuối log ghi, ví dụ: `Dọn dẹp: đã xóa 3 file log cũ (7.5 KB).`
+
+Muốn dọn ngay hoặc xem trước:
+
+```bash
+npm run cleanup -- --dry-run    # chỉ liệt kê những gì sẽ xóa
+npm run cleanup                 # dọn thật
+```
+
+`npm start -- --dry-run` thì không xóa gì.
 
 ---
 
@@ -348,7 +375,8 @@ Nội dung xếp theo mức quan trọng (lỗi, bị xóa, thay đổi, mới, 
 | `npm run server` | Bật server, không tự khởi động lại |
 | `npm run userscript:build` | Tạo userscript FAP đã điền sẵn token |
 | `npm run schedule:install` / `status` / `run` / `remove` | Quản lý job tự chạy trên Windows |
-| `npm test` | Chạy toàn bộ test (70 test) |
+| `npm test` | Chạy toàn bộ test (81 test) |
+| `npm run cleanup` | Dọn log và lịch sử cũ ngay (`-- --dry-run` để xem trước) |
 | `npm run build` | Biên dịch TypeScript sang `dist/` |
 
 ### API của server
@@ -385,7 +413,7 @@ Server chỉ lắng nghe trên `127.0.0.1` (máy bạn), không mở ra mạng L
 | Email báo lỗi LMS | Link iCal bị đổi hoặc bị chặn. Lấy link mới (mục 2.5) |
 | "Cổng 3000 đang được dùng" | Có tiến trình khác chiếm cổng, hoặc server cũ chưa tắt. Đổi `PORT` trong `.env` (và redirect URI trong Google Cloud, cùng `SERVER` trong userscript) |
 | Job tự chạy không chạy | `npm run schedule:status` xem lần gần nhất và mã kết quả. Nhớ rằng nó chỉ chạy khi bạn đã đăng nhập Windows |
-| Xem chi tiết một lần chạy ngầm | Mở `logs/sync.log` |
+| Xem chi tiết một lần chạy ngầm | Mở `logs/sync-<ngày>.log` của ngày đó (`npm run schedule:status` in sẵn 15 dòng cuối). Log chỉ giữ 7 ngày |
 
 ---
 
@@ -421,6 +449,7 @@ src/
 ├─ server.ts, app.ts           server Express
 ├─ config/                     đọc .env, tạo OAuth client Google
 ├─ db/                         SQLite: schema, kết nối, migration
+├─ maintenance/                dọn log và lịch sử cũ (tự chạy sau mỗi `npm start`)
 ├─ middlewares/                xử lý lỗi, kiểm tra dữ liệu vào
 ├─ test-utils/fakeGoogle.ts    Google giả (mô phỏng cả bản "đã xóa") dùng cho test
 └─ modules/
@@ -439,7 +468,7 @@ Mỗi module chia theo `*.routes` / `*.controller` / `*.service` / `*.repository
 |---|---|
 | `lms_events` | Các hạn nộp bài đã thấy và trạng thái đồng bộ |
 | `fap_sessions` | Các buổi học/thi từ FAP và trạng thái đồng bộ |
-| `sync_runs` | Lịch sử các lần chạy |
+| `sync_runs` | Lịch sử các lần chạy (tự xóa sau 90 ngày) |
 | `app_state` | Trạng thái lặt vặt (lần cảnh báo gần nhất) |
 
 Bảng tự được tạo và nâng cấp khi chạy.
