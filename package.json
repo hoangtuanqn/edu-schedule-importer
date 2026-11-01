@@ -13,7 +13,8 @@
     "schedule:install": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/schedule.ps1 -Action install",
     "schedule:status": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/schedule.ps1 -Action status",
     "schedule:run": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/schedule.ps1 -Action run",
-    "schedule:remove": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/schedule.ps1 -Action remove"
+    "schedule:remove": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/schedule.ps1 -Action remove",
+    "userscript:build": "node --env-file=.env scripts/build-userscript.mjs"
   },
   "keywords": [],
   "author": "",
