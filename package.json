@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "tsx --disable-warning=ExperimentalWarning --test src/modules/lms/lms.sync.test.ts src/modules/notify/notify.test.ts src/modules/notify/alert.test.ts src/modules/fap/fap.test.ts",
+    "test": "tsx --disable-warning=ExperimentalWarning --test src/modules/lms/lms.sync.test.ts src/modules/notify/notify.test.ts src/modules/notify/alert.test.ts src/modules/fap/fap.test.ts src/maintenance/cleanup.test.ts",
     "start": "tsx --disable-warning=ExperimentalWarning src/cli.ts",
     "build": "tsc",
     "dev": "tsx watch --disable-warning=ExperimentalWarning src/server.ts",
@@ -14,7 +14,8 @@
     "schedule:status": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/schedule.ps1 -Action status",
     "schedule:run": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/schedule.ps1 -Action run",
     "schedule:remove": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/schedule.ps1 -Action remove",
-    "userscript:build": "node --env-file=.env scripts/build-userscript.mjs"
+    "userscript:build": "node --env-file=.env scripts/build-userscript.mjs",
+    "cleanup": "tsx --disable-warning=ExperimentalWarning src/cleanup-cli.ts"
   },
   "keywords": [],
   "author": "",

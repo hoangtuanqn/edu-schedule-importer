@@ -1,4 +1,6 @@
 import { createHash } from "node:crypto";
+import path from "node:path";
+import { env } from "./config/env.js";
 import type { OAuth2Client } from "./config/google.js";
 import { closeDb, getDb } from "./db/connection.js";
 import { loginInteractive } from "./modules/auth/auth.cli.js";
@@ -7,6 +9,7 @@ import { formatFapReport } from "./modules/fap/fap.report.js";
 import { reconcile as reconcileFap } from "./modules/fap/fap.service.js";
 import { formatReport } from "./modules/lms/lms.report.js";
 import { syncNow } from "./modules/lms/lms.service.js";
+import { describeCleanup, runMaintenance } from "./maintenance/cleanup.js";
 import { alertOnce } from "./modules/notify/alert.js";
 import type { NotificationMessage } from "./modules/notify/notify.types.js";
 
@@ -77,6 +80,23 @@ async function main(): Promise<number> {
   return failed ? 1 : 0;
 }
 
+/** Dọn log và lịch sử cũ cho nhẹ máy. Lỗi ở đây không được làm hỏng lần đồng bộ nên chỉ ghi nhận rồi bỏ qua. */
+function tidy() {
+  if (dryRun) return; // xem trước thì không xóa gì
+  try {
+    const line = describeCleanup(
+      runMaintenance(getDb(), {
+        logDir: path.join(process.cwd(), "logs"),
+        logKeepDays: env.logRetentionDays,
+        historyKeepDays: env.historyRetentionDays,
+      }),
+    );
+    if (line) console.log(line);
+  } catch (e) {
+    console.error(`Dọn dẹp lỗi (bỏ qua): ${e instanceof Error ? e.message : e}`);
+  }
+}
+
 /** Job chạy ngầm bị hỏng thì không ai thấy terminal, nên báo qua email (không lặp lại quá 1 lần/24 giờ) */
 async function alertFailure(e: unknown): Promise<number> {
   const reason = e instanceof Error ? e.message : String(e);
@@ -120,6 +140,7 @@ async function alertFailure(e: unknown): Promise<number> {
 
 main()
   .then((code) => {
+    tidy();
     closeDb();
     process.exit(code);
   })
@@ -127,6 +148,7 @@ main()
     console.error(`\n[${stamp()}] THẤT BẠI: ${e instanceof Error ? e.message : e}`);
     if ((e as { details?: unknown })?.details) console.error(JSON.stringify((e as { details: unknown }).details));
     const code = nonInteractive ? await alertFailure(e) : 1;
+    tidy();
     closeDb();
     process.exit(code);
   });
